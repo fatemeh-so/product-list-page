@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "../ui/input";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,95 @@ import { Label } from "../ui/label";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProductsFilter } from "@/context/products-filter-context";
 import { ChevronDown, Search } from "lucide-react";
+
+//Price Filter
+
+interface PriceFilterContentProps {
+  tempRange: [number, number];
+  setTempRange: (range: [number, number]) => void;
+  onApply: () => void;
+  onClear: () => void;
+}
+
+function PriceFilterContent({
+  tempRange,
+  setTempRange,
+  onApply,
+  onClear,
+}: PriceFilterContentProps) {
+  return (
+    <div className="flex flex-col gap-4 p-2">
+      {/* step is intentionally omitted (defaults to 1) for smooth dragging */}
+      <Slider
+        value={tempRange}
+        onValueChange={(value) => setTempRange(value as [number, number])}
+        max={36999.99}
+        min={0.79}
+        className="mx-auto w-full max-w-xs"
+      />
+      <div className="flex gap-2">
+        <Input
+          type="number"
+          placeholder="Min"
+          value={tempRange[0]}
+          onChange={(e) => setTempRange([Number(e.target.value), tempRange[1]])}
+          className="h-9"
+        />
+        <Input
+          type="number"
+          placeholder="Max"
+          value={tempRange[1]}
+          onChange={(e) => setTempRange([tempRange[0], Number(e.target.value)])}
+          className="h-9"
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 h-9"
+          onClick={onClear}
+        >
+          Clear
+        </Button>
+        <Button size="sm" className="flex-1 h-9" onClick={onApply}>
+          Apply
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sort Drawer Content ──────────────────────────────────────────────────────
+
+const sortOptions = [
+  { value: "desc", label: "Newest" },
+  { value: "discount", label: "Biggest Discount" },
+  { value: "LowPrice", label: "Price: Low to High" },
+  { value: "HighPrice", label: "Price: High to Low" },
+];
+
+interface SortDrawerContentProps {
+  currentSort: string | null;
+  onSelect: (value: string) => void;
+}
+
+function SortDrawerContent({ currentSort, onSelect }: SortDrawerContentProps) {
+  return (
+    <div className="flex flex-col gap-2 p-4 pb-8">
+      {sortOptions.map((opt) => (
+        <Button
+          key={opt.value}
+          variant={currentSort === opt.value ? "default" : "outline"}
+          className="w-full justify-start h-11 text-sm"
+          onClick={() => onSelect(opt.value)}
+        >
+          {opt.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 interface ProductListHeaderProps {
   total: number;
@@ -61,8 +150,6 @@ export default function ProductListHeader({
   const { data: categories } = useCategories();
   const categoriesOptions = categories?.map((n: any) => n.slug);
   const { data: brands } = useBrands();
-  const min = minPrice;
-  const max = maxPrice;
 
   const [debouncedValue, setDebouncedValue] = useState(searchTerm);
   const [tempRange, setTempRange] = useState<[number, number]>(
@@ -81,97 +168,29 @@ export default function ProductListHeader({
     setDebouncedValue(value);
   };
 
-  // --- Reusable Price Filter Content ---
-  const PriceFilterContent = ({ close }: { close?: () => void }) => (
-    <div className="flex flex-col gap-4 p-2">
-      <Slider
-        value={tempRange ?? [minPrice, maxPrice]}
-        onValueChange={(value) => setTempRange(value as [number, number])}
-        max={36999.99}
-        min={0.79}
-        step={20}
-        className="mx-auto w-full max-w-xs"
-      />
-      <div className="flex gap-2">
-        <Input
-          type="number"
-          placeholder="Min"
-          value={tempRange?.[0]}
-          onChange={(e) => {
-            setPage(1);
-            setTempRange([Number(e.target.value), tempRange?.[1] ?? maxPrice]);
-          }}
-          className="h-9"
-        />
-        <Input
-          type="number"
-          placeholder="Max"
-          value={tempRange?.[1]}
-          onChange={(e) => {
-            setPage(1);
-            setTempRange([tempRange?.[0] ?? minPrice, Number(e.target.value)]);
-          }}
-          className="h-9"
-        />
-      </div>
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1 h-9"
-          onClick={() => {
-            setPage(1);
-            setRange([0.79, 36999.99]);
-            setTempRange([0.79, 36999.99]);
-            close?.();
-          }}
-        >
-          Clear
-        </Button>
-        <Button
-          size="sm"
-          className="flex-1 h-9"
-          onClick={() => {
-            setPage(1);
-            setRange([tempRange[0], tempRange[1]]);
-            close?.();
-          }}
-        >
-          Apply
-        </Button>
-      </div>
-    </div>
-  );
+  // Stable callbacks so PriceFilterContent doesn't re-mount
+  const handleApply = useCallback(() => {
+    setPage(1);
+    setRange([tempRange[0], tempRange[1]]);
+  }, [tempRange, setPage, setRange]);
 
-  // --- Sort Options ---
-  const sortOptions = [
-    { value: "desc", label: "Newest" },
-    { value: "discount", label: "Biggest Discount" },
-    { value: "LowPrice", label: "Price: Low to High" },
-    { value: "HighPrice", label: "Price: High to Low" },
-  ];
+  const handleClear = useCallback(() => {
+    setPage(1);
+    setRange([0.79, 36999.99]);
+    setTempRange([0.79, 36999.99]);
+  }, [setPage, setRange]);
 
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
   const [currentSort, setCurrentSort] = useState<string | null>(null);
 
-  const SortDrawerContent = ({ close }: { close?: () => void }) => (
-    <div className="flex flex-col gap-2 p-4 pb-8">
-      {sortOptions.map((opt) => (
-        <Button
-          key={opt.value}
-          variant={currentSort === opt.value ? "default" : "outline"}
-          className="w-full justify-start h-11 text-sm"
-          onClick={() => {
-            setCurrentSort(opt.value);
-            setPage(1);
-            setSortBy(opt.value);
-            close?.();
-          }}
-        >
-          {opt.label}
-        </Button>
-      ))}
-    </div>
+  const handleSortSelect = useCallback(
+    (value: string) => {
+      setCurrentSort(value);
+      setPage(1);
+      setSortBy(value);
+      setSortDrawerOpen(false);
+    },
+    [setPage, setSortBy],
   );
 
   return (
@@ -179,9 +198,8 @@ export default function ProductListHeader({
       {/* row 1 - product count + search */}
       <div className="flex gap-4 justify-between items-center">
         <p className="text-lg font-semibold">{total} products</p>
-        <div className="relative w-full flex-1 ">
+        <div className="relative w-full flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
           <Input
             type="text"
             placeholder="Search products"
@@ -194,7 +212,6 @@ export default function ProductListHeader({
 
       {/* row 2 - filters + in stock */}
       <div className="flex gap-4 justify-between items-center mt-6 flex-wrap">
-        {/* Filters grid: 2x2 on mobile, single row on sm+ */}
         <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:flex sm:items-center sm:flex-wrap">
           {/* Sort */}
           {isMobile ? (
@@ -213,7 +230,10 @@ export default function ProductListHeader({
                 <DrawerHeader>
                   <DrawerTitle>Sort By</DrawerTitle>
                 </DrawerHeader>
-                <SortDrawerContent close={() => setSortDrawerOpen(false)} />
+                <SortDrawerContent
+                  currentSort={currentSort}
+                  onSelect={handleSortSelect}
+                />
               </DrawerContent>
             </Drawer>
           ) : (
@@ -279,7 +299,12 @@ export default function ProductListHeader({
                   <DrawerTitle>Select Price Range</DrawerTitle>
                 </DrawerHeader>
                 <div className="p-4 pb-8">
-                  <PriceFilterContent />
+                  <PriceFilterContent
+                    tempRange={tempRange}
+                    setTempRange={setTempRange}
+                    onApply={handleApply}
+                    onClear={handleClear}
+                  />
                 </div>
               </DrawerContent>
             </Drawer>
@@ -295,7 +320,12 @@ export default function ProductListHeader({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-4" align="start">
-                <PriceFilterContent />
+                <PriceFilterContent
+                  tempRange={tempRange}
+                  setTempRange={setTempRange}
+                  onApply={handleApply}
+                  onClear={handleClear}
+                />
               </PopoverContent>
             </Popover>
           )}
