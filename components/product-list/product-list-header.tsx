@@ -59,7 +59,7 @@ export default function ProductListHeader({
 
   const isMobile = useIsMobile();
   const { data: categories } = useCategories();
-  const categoriesOptions = categories?.map((n: { slug: string }) => n.slug);
+  const categoriesOptions = categories?.map((n: any) => n.slug);
   const { data: brands } = useBrands();
 
   const [debouncedValue, setDebouncedValue] = useState(searchTerm);
