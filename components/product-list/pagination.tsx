@@ -35,11 +35,18 @@ export function PaginationDemo({ total }: PaginationProps) {
   return (
     <Pagination className="py-8">
       <PaginationContent>
-        <PaginationPrevious onClick={() => setPage(page - 1)} />
+        <PaginationPrevious
+          onClick={() => {
+            if (page > 1) {
+              setPage(page - 1);
+            }
+          }}
+          isActive={page > 1}
+        />
 
         {/* Always show first page */}
         <PaginationItem>
-          <PaginationLink onClick={() => setPage(1)} isActive={page === 1}>
+          <PaginationLink onClick={() => setPage(1)} isActive={page >= 1}>
             1
           </PaginationLink>
         </PaginationItem>
@@ -82,7 +89,14 @@ export function PaginationDemo({ total }: PaginationProps) {
           </PaginationItem>
         )}
 
-        <PaginationNext onClick={() => setPage(page + 1)} />
+        <PaginationNext
+          onClick={() => {
+            if (page < totalPages) {
+              setPage(page + 1);
+            }
+          }}
+          isActive={page < totalPages}
+        />
       </PaginationContent>
     </Pagination>
   );
