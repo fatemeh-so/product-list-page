@@ -30,7 +30,7 @@ export const useProduct = ({
   category = "",
   fields = "",
   brand = "",
-  range = [0, 10000000],
+  range = [0.79, 36999.99],
   inStock = false,
 }: UseProductParams) =>
   useQuery({
@@ -62,6 +62,8 @@ export const useProduct = ({
       );
       return data as ProductResponse;
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 export const useCategories = () => {
   return useQuery({
@@ -90,5 +92,7 @@ export const useProductById = (id: number | undefined) => {
       const data = await getProduct(id);
       return data as ProductSubset;
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 };

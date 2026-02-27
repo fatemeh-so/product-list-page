@@ -46,7 +46,7 @@ export async function fetchProducts(
   fields: string = "",
   category: string = "",
   brand: string = "",
-  range: [number, number] = [0, 10000000],
+  range: [number, number] = [0.79, 36999.99],
   inStock: boolean = false,
 ): Promise<ProductResponse> {
   // Calculate skip for pagination
@@ -157,6 +157,7 @@ export async function fetchProducts(
   // 10. Apply pagination AFTER all filtering
   const totalFiltered = products.length;
   const paginatedProducts = products.slice(skip, skip + limit);
+  console.log("fhfb", minPrice, maxPrice);
 
   return {
     products: paginatedProducts,

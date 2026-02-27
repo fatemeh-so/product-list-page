@@ -61,6 +61,8 @@ export default function ProductListHeader({
   const { data: categories } = useCategories();
   const categoriesOptions = categories?.map((n: any) => n.slug);
   const { data: brands } = useBrands();
+  const min = minPrice;
+  const max = maxPrice;
 
   const [debouncedValue, setDebouncedValue] = useState(searchTerm);
   const [tempRange, setTempRange] = useState<[number, number]>(
@@ -84,13 +86,10 @@ export default function ProductListHeader({
     <div className="flex flex-col gap-4 p-2">
       <Slider
         value={tempRange ?? [minPrice, maxPrice]}
-        onValueChange={(value) => {
-          setPage(1);
-          setTempRange(value as [number, number]);
-        }}
-        max={maxPrice}
-        min={minPrice}
-        step={5}
+        onValueChange={(value) => setTempRange(value as [number, number])}
+        max={36999.99}
+        min={0.79}
+        step={20}
         className="mx-auto w-full max-w-xs"
       />
       <div className="flex gap-2">
@@ -122,8 +121,8 @@ export default function ProductListHeader({
           className="flex-1 h-9"
           onClick={() => {
             setPage(1);
-            setRange([minPrice, maxPrice]);
-            setTempRange([minPrice, maxPrice]);
+            setRange([0.79, 36999.99]);
+            setTempRange([0.79, 36999.99]);
             close?.();
           }}
         >
