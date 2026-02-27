@@ -144,6 +144,7 @@ export default function ProductListHeader({
     inStock,
     setInStock,
     setPage,
+    sortBy,
   } = useProductsFilter();
 
   const isMobile = useIsMobile();
@@ -238,7 +239,9 @@ export default function ProductListHeader({
             </Drawer>
           ) : (
             <Select
+              value={sortBy || "desc"}
               onValueChange={(value) => {
+                setCurrentSort(value);
                 setPage(1);
                 setSortBy(value);
               }}
